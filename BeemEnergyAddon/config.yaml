@@ -1,0 +1,32 @@
+name: "Beem Energy"
+url: "https://github.com/funkolab/BeemEnergy"
+description: "Connect your Beem Energy Solar Panel to Home Assistant. ⚡️"
+services:
+  - "mqtt:want"
+version: "0.0.1"
+homeassistant_api: true
+image: "ghcr.io/funkolab/beem2mqtt"
+slug: "beem_energy"
+init: false
+discovery:
+  - "mqtt"
+options:
+  beem_email: ""
+  beem_password: ""
+  refresh_interval: 1
+  debug: false
+  start_delayseconds: 1
+schema:
+  beem_email: email
+  beem_password: password
+  refresh_interval: int
+  debug: bool
+  override_mqtt_user: str?
+  override_mqtt_password: password?
+  override_mqtt_server: str?
+  override_mqtt_port: port?
+  start_delayseconds: int?
+arch:
+  - amd64
+  - aarch64
+  - armv7

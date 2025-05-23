@@ -1,0 +1,29 @@
+---
+configuration:
+  beem_email:
+    name: Adresse e-mail de connexion
+    description: Votre identifiant Beem Energy.
+  beem_password:
+    name: Mot de passe
+    description: Votre mot de passe Beem Energy.
+  start_delayseconds:
+    name: Délai de démarrage en secondes
+    description: Retarde le démarrage de l'addon. Utile si vous souhaitez attendre le démarrage d'autres addons (comme un démarrage lent de MQTT).
+  refresh_interval:
+    name: Intervalle de rafraîchissement
+    description: Récupère de nouvelles données de l'API toutes les N minutes.
+  debug:
+    name: Debug
+    description: Active le journal de debug. Cela affichera de nombreuses informations dans le journal, y compris des jetons de session et des informations sensibles.
+  override_mqtt_user:
+    name: Remplacer l'utilisateur MQTT
+    description: Remplace les paramètres MQTT si vous utilisez un broker externe. Vous n'en avez pas besoin si vous utilisez l'addon MQTT officiel de Home Assistant.
+  override_mqtt_password:
+    name: Remplacer le mot de passe MQTT
+    description: Remplace les paramètres MQTT si vous utilisez un broker externe. Vous n'en avez pas besoin si vous utilisez l'addon MQTT officiel de Home Assistant.
+  override_mqtt_server:
+    name: Remplacer le serveur MQTT
+    description: Remplace les paramètres MQTT si vous utilisez un broker externe. Vous n'en avez pas besoin si vous utilisez l'addon MQTT officiel de Home Assistant.
+  override_mqtt_port:
+    name: Remplacer le port MQTT
+    description: Remplace les paramètres MQTT si vous utilisez un broker externe. Vous n'en avez pas besoin si vous utilisez l'addon MQTT officiel de Home Assistant.

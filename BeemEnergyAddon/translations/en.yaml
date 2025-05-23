@@ -1,0 +1,29 @@
+---
+configuration:
+  beem_email:
+    name: Login email
+    description: Your Beem Energy user.
+  beem_password:
+    name: Password
+    description: Your Beem Energy password.
+  start_delayseconds:
+    name: Start delay in seconds
+    description: Delay start of addon. Useful if you want to wait for other addons to start first (like slow mqtt startup).
+  refresh_interval:
+    name: Refresh interval
+    description: Fetch new data from api every N minutes.
+  debug:
+    name: Debug
+    description: Enable debug logging. It will dump many informations to the log including session tokens and sensitive informations.
+  override_mqtt_user:
+    name: Override mqtt user
+    description: Override mqtt settings if you are using an external broker. you do not need this if you are using the official home assistant mqtt addon.
+  override_mqtt_password:
+    name: Override mqtt password
+    description: Override mqtt settings if you are using an external broker. you do not need this if you are using the official home assistant mqtt addon.
+  override_mqtt_server:
+    name: Override mqtt server
+    description: Override mqtt settings if you are using an external broker. you do not need this if you are using the official home assistant mqtt addon.
+  override_mqtt_port:
+    name: Override mqtt port
+    description: Override mqtt settings if you are using an external broker. you do not need this if you are using the official home assistant mqtt addon.
