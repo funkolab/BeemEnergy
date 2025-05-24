@@ -1,9 +1,9 @@
 name: "Beem Energy"
 url: "https://github.com/funkolab/BeemEnergy"
-description: "Connect your Beem Energy Solar Panel to Home Assistant. ⚡️"
+description: "Connect your Beem Energy Solar Panel to Home Assistant ⚡️"
 services:
   - "mqtt:want"
-version: "0.0.1"
+version: "0.1.0"
 homeassistant_api: true
 image: "ghcr.io/funkolab/beem2mqtt"
 slug: "beem_energy"
