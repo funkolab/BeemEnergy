@@ -32,7 +32,7 @@ jobs:
           go-version-file: BeemEnergyAddon/go.mod
 
       - name: Install KO
-        uses: ko-build/setup-ko@v0.8
+        uses: ko-build/setup-ko@v0.9
         env:
           KO_DOCKER_REPO: ghcr.io/funkolab
       
