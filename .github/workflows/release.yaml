@@ -95,36 +95,3 @@ jobs:
           PTAGS=`echo $TAGS | sed 's/zigbee2mqtt:v//g' | sed 's/zigbee2mqtt://g'`
           ko build --bare --image-label "$LABELS" -t "$PTAGS" --platform=$PLATFORMS 
           
-
-      - name: Generate build summary
-        run: |
-          echo "## 🚀 Multi-Architecture Container Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ steps.meta.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag:** \`${{ steps.meta.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Architectures:** \`linux/amd64\`, \`linux/arm64\`, \`linux/arm/v7\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Pull Command" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Architecture-Specific Pull Commands" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# AMD64" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull --platform linux/amd64 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# ARM64" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull --platform linux/arm64 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# ARM v7" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull --platform linux/arm/v7 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "${{ steps.meta.outputs.is_release }}" == "true" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🏷️ **Latest tag also created for this release**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ steps.meta.outputs.image }}:latest" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
