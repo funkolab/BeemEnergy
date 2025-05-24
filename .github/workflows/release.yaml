@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          TAG=$(git describe --tags --abbrev=0)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Get version from config.yaml
+        id: get_config_version
+        run: |
+          VERSION=$(grep '^version:' BeemEnergyAddon/config.yaml | awk '{print $2}')
+          echo "config_version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Compare config.yaml version with latest tag
+        run: |
+          TAG_VERSION="${{ steps.get_tag.outputs.tag }}"
+          CONFIG_VERSION="${{ steps.get_config_version.outputs.config_version }}"
+          # Remove leading 'v' from tag if present
+          TAG_VERSION_STRIPPED="${TAG_VERSION#v}"
+          if [ "$TAG_VERSION_STRIPPED" != "$CONFIG_VERSION" ]; then
+            echo "Version in config.yaml ($CONFIG_VERSION) was NOT bumped to align with release tag ($TAG_VERSION)."
+            exit 1
+          else
+            echo "Version in config.yaml ($CONFIG_VERSION) is aligned with release tag ($TAG_VERSION)."
+          fi
+
+      - name: Check if README.md and BeemEnergyAddon/DOCS.md are the same
+        run: |
+          if ! diff README.md BeemEnergyAddon/DOCS.md > /dev/null; then
+            echo "README.md and BeemEnergyAddon/DOCS.md are different!"
+            exit 1
+          else
+            echo "README.md and BeemEnergyAddon/DOCS.md are identical."
+          fi
+
+      - name: Check if README.md and BeemEnergyAddon/README.md are the same
+        run: |
+          if ! diff README.md BeemEnergyAddon/README.md > /dev/null; then
+            echo "README.md and BeemEnergyAddon/README.md are different!"
+            exit 1
+          else
+            echo "README.md and BeemEnergyAddon/README.md are identical."
+          fi
+
+
+
+  build-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: BeemEnergyAddon/BeemClient/go.mod
+
+      - name: Install KO
+        uses: ko-build/setup-ko@v0.9
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: zigbee2mqtt
+          sep-tags: ","
+          sep-labels: ","
+          tags: |
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+
+      - name: Build and push multi-arch with Ko
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          LABELS: ${{ steps.meta.outputs.labels }}
+          PLATFORMS: linux/amd64,linux/arm64,linux/arm
+        run: |
+          cd BeemEnergyAddon/BeemClient
+          export SOURCE_DATE_EPOCH=$(date +%s)
+          PTAGS=`echo $TAGS | sed 's/zigbee2mqtt:v//g' | sed 's/zigbee2mqtt://g'`
+          ko build --bare --image-label "$LABELS" -t "$PTAGS" --platform=$PLATFORMS 
+          
+
+      - name: Generate build summary
+        run: |
+          echo "## 🚀 Multi-Architecture Container Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.meta.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`${{ steps.meta.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Architectures:** \`linux/amd64\`, \`linux/arm64\`, \`linux/arm/v7\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pull Command" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Architecture-Specific Pull Commands" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# AMD64" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull --platform linux/amd64 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# ARM64" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull --platform linux/arm64 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# ARM v7" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull --platform linux/arm/v7 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.meta.outputs.is_release }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🏷️ **Latest tag also created for this release**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ steps.meta.outputs.image }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi

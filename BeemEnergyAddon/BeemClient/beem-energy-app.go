@@ -107,13 +107,15 @@ func main() {
 		file, err := os.Open(configFile)
 		if err != nil {
 			slog.Error("failed to open config file", "error", err)
+			os.Exit(1)
 		}
-		defer file.Close()
 
 		if err := json.NewDecoder(file).Decode(&config); err != nil {
 			slog.Error("Failed to decode config file", "error", err)
 		}
-
+		if err := file.Close(); err != nil {
+			slog.Error("failed to close config file", "error", err)
+		}
 	}
 
 	if config.Debug {
@@ -192,7 +194,11 @@ func login(config Config) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			slog.Warn("failed to close response body", "error", cerr)
+		}
+	}()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
@@ -252,7 +258,11 @@ func getBoxSummary(token string) (SummaryResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			slog.Warn("failed to close response body", "error", cerr)
+		}
+	}()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)

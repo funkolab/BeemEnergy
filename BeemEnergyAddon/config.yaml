@@ -5,7 +5,7 @@ services:
   - "mqtt:want"
 version: "0.1.0"
 homeassistant_api: true
-image: "ghcr.io/funkolab/beem2mqtt"
+image: "ghcr.io/funkolab/beemenergy"
 slug: "beem_energy"
 init: false
 discovery:
