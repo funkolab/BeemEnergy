@@ -2,42 +2,15 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
-
-const (
-	baseURL         = "https://api-x.beem.energy/beemapp"
-	loginEndpoint   = "/user/login"
-	summaryEndpoint = "/box/summary"
-
-	// MQTT configuration
-	mqttBaseTopic       = "homeassistant"
-	mqttDiscoveryPrefix = "homeassistant"
-	mqttDeviceClass     = "energy"
-	mqttStateClass      = "measurement"
-)
-
-// Config stores addon config information
-type Config struct {
-	BeemEmail    string `json:"beem_email"`
-	BeemPassword string `json:"beem_password"`
-
-	StartDelay      int  `json:"start_delayseconds"`
-	Debug           bool `json:"debug"`
-	RefreshInterval int  `json:"refresh_interval"`
-
-	MQTTHost     string `json:"override_mqtt_server"`
-	MQTTPort     int    `json:"override_mqtt_port"`
-	MQTTUsername string `json:"override_mqtt_username"`
-	MQTTPassword string `json:"override_mqtt_password"`
-}
 
 // Credentials stores user login information
 type Credentials struct {
@@ -77,87 +50,23 @@ type BoxData struct {
 // SummaryResponse represents the array of box data returned by the API
 type SummaryResponse []BoxData
 
-func main() {
+func fetchBeemData(config *Config) {
 
-	logLevel := &slog.LevelVar{} // INFO
+	if config.Token != "" && !isTokenExpired(config.Token) {
+		slog.Info("beem already logged with existing access token")
 
-	opts := &slog.HandlerOptions{
-		Level: logLevel,
-	}
+	} else {
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
-	slog.SetDefault(logger)
-
-	slog.Info("=============   Beem Energy Addon - starting Application   =============")
-
-	// Global config
-	var config Config
-
-	err := getMQTTInfo(&config)
-	if err != nil {
-		slog.Error("error retrieving MQTT info", "error", err)
-		os.Exit(1)
-
-	}
-
-	// Load config from /data/options.json if it exists
-	configFile := "/data/options.json"
-
-	if _, err := os.Stat(configFile); err == nil {
-		file, err := os.Open(configFile)
+		err := login(config)
 		if err != nil {
-			slog.Error("failed to open config file", "error", err)
-			os.Exit(1)
+			slog.Error("beem login failed", "error", err)
+			return
 		}
-
-		if err := json.NewDecoder(file).Decode(&config); err != nil {
-			slog.Error("Failed to decode config file", "error", err)
-		}
-		if err := file.Close(); err != nil {
-			slog.Error("failed to close config file", "error", err)
-		}
+		slog.Info("beem successfully logged in and got access token")
 	}
-
-	if config.Debug {
-		logLevel.Set(slog.LevelDebug)
-		slog.Debug("debug mode is enabled")
-	}
-
-	slog.Debug("config file", "content", config)
-
-	// Wait for StartDelay seconds if specified
-	if config.StartDelay > 0 {
-		slog.Info("waiting before starting", "delay", config.StartDelay)
-		time.Sleep(time.Duration(config.StartDelay) * time.Second)
-	}
-
-	// Connect to MQTT broker
-	setupMQTTClient(config)
-
-	// Start the ticker to run every minute
-	ticker := time.NewTicker(time.Duration(config.RefreshInterval) * time.Minute)
-	defer ticker.Stop()
-
-	// Run once immediately before waiting for the ticker
-	fetchBeemData(config)
-
-	for range ticker.C {
-		fetchBeemData(config)
-	}
-}
-
-func fetchBeemData(config Config) {
-	// Step 1: Login and get access token
-	token, err := login(config)
-	if err != nil {
-		slog.Error("beem login failed", "error", err)
-		return
-	}
-
-	slog.Info("beem successfully logged in and got access token")
 
 	// Step 2: Get the box summary for current month and year
-	summary, err := getBoxSummary(token)
+	summary, err := getBoxSummary(config.Token)
 	if err != nil {
 		slog.Error("beem: failed to get box summary", "error", err)
 		return
@@ -167,7 +76,7 @@ func fetchBeemData(config Config) {
 	processData(summary, config.Debug)
 }
 
-func login(config Config) (string, error) {
+func login(config *Config) error {
 	// Convert credentials to JSON
 
 	var credentials Credentials
@@ -176,13 +85,13 @@ func login(config Config) (string, error) {
 
 	jsonData, err := json.Marshal(credentials)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal credentials: %w", err)
+		return fmt.Errorf("failed to marshal credentials: %w", err)
 	}
 
 	// Create the HTTP request
 	req, err := http.NewRequest("POST", baseURL+loginEndpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set headers
@@ -192,7 +101,7 @@ func login(config Config) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute request: %w", err)
+		return fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -203,25 +112,71 @@ func login(config Config) (string, error) {
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
+		return fmt.Errorf("failed to read response: %w", err)
 	}
 
 	// Check if response status code is not successful
 	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("login failed with status code %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("login failed with status code %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse the response
 	var loginResp LoginResponse
 	if err := json.Unmarshal(body, &loginResp); err != nil {
-		return "", fmt.Errorf("failed to unmarshal response: %w", err)
+		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
 	if loginResp.AccessToken == "" {
-		return "", fmt.Errorf("no access token in response")
+		return fmt.Errorf("no access token in response")
 	}
 
-	return loginResp.AccessToken, nil
+	config.Token = loginResp.AccessToken
+	slog.Debug("beem login successful", "accessToken", config.Token)
+
+	return nil
+}
+
+func isTokenExpired(token string) bool {
+	// Split the token into parts
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return true // Invalid token format
+	}
+
+	// Decode the payload (second part)
+	payload := parts[1]
+
+	// Add padding if needed for base64 decoding
+	for len(payload)%4 != 0 {
+		payload += "="
+	}
+
+	// Decode base64 URL
+	decoded, err := base64.RawURLEncoding.DecodeString(payload)
+	if err != nil {
+		return true // Failed to decode
+	}
+
+	// Parse JSON
+	var claims map[string]interface{}
+	if err := json.Unmarshal(decoded, &claims); err != nil {
+		return true // Failed to parse JSON
+	}
+
+	// Check expiration time
+	exp, exists := claims["exp"]
+	if !exists {
+		return true // No expiration claim
+	}
+
+	// Convert to int64 (Unix timestamp)
+	expTime, ok := exp.(float64)
+	if !ok {
+		return true // Invalid exp format
+	}
+
+	// Compare with current time
+	return time.Now().Unix() > int64(expTime)
 }
 
 func getBoxSummary(token string) (SummaryResponse, error) {
