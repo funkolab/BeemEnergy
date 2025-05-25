@@ -6,6 +6,8 @@ I have created this addon for my own ☀️ installation (Beem On SOLO) and its 
 
 Example dashboard using sensors and entities provided by this addon:
 
+<img width="1014" alt="image" src="https://github.com/user-attachments/assets/6c8ed659-54e6-4cf3-8728-6693eac53199" />
+
 
 ## Prerequisites 📃
 
