@@ -55,8 +55,6 @@ func main() {
 	err := getMQTTInfo(&config)
 	if err != nil {
 		slog.Error("error retrieving MQTT info", "error", err)
-		os.Exit(1)
-
 	}
 
 	// Load config from /data/options.json if it exists
