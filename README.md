@@ -1,4 +1,17 @@
-# ⚡️⚡️ Beem Energy Addon ⚡️⚡️
+<h1 align="center">⚡️⚡️ Beem Energy Addon ⚡️⚡️</h1>
+
+<p align="center">
+    <a href="https://github.com/funkolab/BeemEnergy/actions?query=workflow%3Arelease">
+        <img src="https://img.shields.io/github/actions/workflow/status/funkolab/BeemEnergy/release.yaml">
+    </a>
+    <a href="https://github.com/funkolab/BeemEnergy/releases">
+        <img src="https://img.shields.io/github/v/release/funkolab/BeemEnergy">
+    </a>
+    <a href="https://github.com/funkolab/BeemEnergy/stargazers">
+        <img src="https://img.shields.io/github/stars/funkolab/BeemEnergy">
+    </a>
+</p>
+
 
 Connect your Beem Energy ⚡️ installation to Home Assistant.
 
