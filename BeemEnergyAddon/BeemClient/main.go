@@ -10,6 +10,7 @@ import (
 const (
 	baseURL         = "https://api-x.beem.energy/beemapp"
 	loginEndpoint   = "/user/login"
+	devicesEndpoint = "/devices"
 	summaryEndpoint = "/box/summary"
 
 	// MQTT configuration
