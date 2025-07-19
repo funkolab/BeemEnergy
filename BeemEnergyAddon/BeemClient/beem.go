@@ -66,6 +66,7 @@ func fetchBeemData(config *Config) {
 	}
 
 	// Step 2: Get the box summary for current month and year
+	slog.Debug("fetching box summary for current month and year")
 	summary, err := getBoxSummary(config.Token)
 	if err != nil {
 		slog.Error("beem: failed to get box summary", "error", err)
@@ -73,6 +74,7 @@ func fetchBeemData(config *Config) {
 	}
 
 	// Process and display the summary data
+	slog.Debug("processing box summary data")
 	processData(summary, config.Debug)
 }
 
@@ -207,6 +209,7 @@ func getBoxSummary(token string) (SummaryResponse, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 
+	slog.Debug("box summary request")
 	// Make the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
