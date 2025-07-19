@@ -65,6 +65,16 @@ func fetchBeemData(config *Config) {
 		slog.Info("beem successfully logged in and got access token")
 	}
 
+	// Step 1: Get the list of devices
+	if config.Debug {
+		slog.Debug("fetching devices list")
+		err := getDevices(config.Token)
+		if err != nil {
+			slog.Error("beem: failed to get devices list", "error", err)
+			return
+		}
+	}
+
 	// Step 2: Get the box summary for current month and year
 	slog.Debug("fetching box summary for current month and year")
 	summary, err := getBoxSummary(config.Token)
@@ -179,6 +189,44 @@ func isTokenExpired(token string) bool {
 
 	// Compare with current time
 	return time.Now().Unix() > int64(expTime)
+}
+
+func getDevices(token string) error {
+
+	// Create the HTTP request
+	req, err := http.NewRequest("GET", baseURL+devicesEndpoint, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	// Set headers
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute devices request: %w", err)
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			slog.Warn("failed to close devices response body", "error", cerr)
+		}
+	}()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Check if response status code is not successful
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("devices request failed with status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Print the devices response for debugging
+	slog.Debug("devices response", "body", string(body))
+
+	return nil
 }
 
 func getBoxSummary(token string) (SummaryResponse, error) {
