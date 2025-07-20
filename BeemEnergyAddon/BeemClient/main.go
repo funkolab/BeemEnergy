@@ -79,9 +79,30 @@ func main() {
 	if config.Debug {
 		logLevel.Set(slog.LevelDebug)
 		slog.Debug("debug mode is enabled")
-	}
 
-	slog.Debug("config file", "content", config)
+		anonConfig := Config{
+			StartDelay:      config.StartDelay,
+			Debug:           config.Debug,
+			RefreshInterval: config.RefreshInterval,
+			MQTTHost:        config.MQTTHost,
+			MQTTPort:        config.MQTTPort,
+			MQTTUsername:    config.MQTTUsername,
+			MQTTPassword:    config.MQTTPassword,
+			Token:           config.Token,
+			BeemPassword:    "xxxxxx", // Masked for debug output
+		}
+		// Anonymize sensitive information
+		masked := ""
+		for _, c := range config.BeemEmail {
+			if c == '@' || c == '.' {
+				masked += string(c)
+			} else {
+				masked += "x"
+			}
+		}
+		anonConfig.BeemEmail = masked
+		slog.Debug("config file", "content", anonConfig)
+	}
 
 	// Wait for StartDelay seconds if specified
 	if config.StartDelay > 0 {
