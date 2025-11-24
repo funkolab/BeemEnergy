@@ -21,6 +21,6 @@ jobs:
           go-version-file: BeemEnergyAddon/BeemClient/go.mod
 
       - name: Golangci-lint
-        uses: golangci/golangci-lint-action@v8.0.0
+        uses: golangci/golangci-lint-action@v9.1.0
         with:
           working-directory: BeemEnergyAddon/BeemClient
