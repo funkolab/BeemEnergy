@@ -71,7 +71,7 @@ jobs:
           go-version-file: BeemEnergyAddon/BeemClient/go.mod
 
       - name: Install KO
-        uses: ko-build/setup-ko@v0.9
+        uses: ko-build/setup-ko@v0.10
 
       - name: Docker meta
         id: meta
